@@ -1,0 +1,58 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: rhbk
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhbk-operator
+  namespace: rhbk
+spec:
+  channel: stable-v26.4
+  installPlanApproval: Automatic
+  name: rhbk-operator
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: rhbk-operator.v26.4.10-opr.1
+---
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: keycloak
+  labels:
+    app: sso
+  namespace: rhbk
+spec:
+  networkPolicy:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+  http:
+    httpEnabled: true 
+  hostname:
+    strict: false
+    strictBackchannel: false
+  update:
+    strategy: RecreateOnImageChange
+  instances: 1
+  additionalOptions:
+    - name: proxy-headers
+      value: "xforwarded"
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: keycloak
+  namespace: rhbk
+spec:
+  to:
+    kind: Service
+    name: keycloak-service
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

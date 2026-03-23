@@ -1,0 +1,93 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: users-v1-api
+  description: Manage Users V1
+  links:
+    - url: http://ab67ea2601be8423bb45c374e7455605-425154512.us-east-2.elb.amazonaws.com:80
+      title: Demo API Endpoint
+      icon: web
+  annotations:
+    backstage.io/techdocs-ref: dir:./users-v1
+spec:
+  type: openapi
+  lifecycle: production
+  owner: backend-team
+  system: identity-management
+  definition: |
+    openapi: 3.1.0
+    paths:
+      /v1/user/{id}:
+        get:
+          parameters:
+          - name: id
+            in: path
+            required: true
+            schema:
+              type: string
+              pattern: "[0-9]+"
+          responses:
+            "200":
+              description: OK
+              content:
+                text/plain:
+                  schema:
+                    type: object
+                    additionalProperties:
+                      type: string
+          summary: User
+          tags:
+          - User Resource V1
+    info:
+      title: Users API
+      version: 1.0.0
+    servers:
+      - url: http://ab67ea2601be8423bb45c374e7455605-425154512.us-east-2.elb.amazonaws.com:80
+        description: Demo API Endpoint
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: users-v2-api
+  description: Manage Users V2
+  links:
+    - url: http://ab67ea2601be8423bb45c374e7455605-425154512.us-east-2.elb.amazonaws.com:80
+      title: Demo API Endpoint
+      icon: web
+  annotations:
+    backstage.io/techdocs-ref: dir:./users-v2
+spec:
+  type: openapi
+  lifecycle: production
+  owner: backend-team
+  system: identity-management
+  definition: |
+    openapi: 3.1.0
+    paths:
+      /v2/user/{id}:
+        get:
+          parameters:
+          - name: id
+            in: path
+            required: true
+            schema:
+              type: string
+              pattern: "[0-9]+"
+          responses:
+            "200":
+              description: OK
+              content:
+                text/plain:
+                  schema:
+                    type: object
+                    additionalProperties:
+                      type: string
+          summary: User
+          tags:
+          - User Resource V2
+    info:
+      title: Users V2 API
+      version: 2.0.0
+    servers:
+      - url: http://ab67ea2601be8423bb45c374e7455605-425154512.us-east-2.elb.amazonaws.com:80
+        description: Demo API Endpoint

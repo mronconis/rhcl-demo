@@ -1,0 +1,70 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: user-component
+  title: User Component
+  description: Core backend service exposing REST APIs for user management.
+  tags:
+    - java
+    - quarkus
+    - rest-api
+  links:
+    - url: https://github.com/mronconis/rhcl-demo
+      title: Repository GitHub
+      icon: github
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: mronconis/rhcl-demo
+spec:
+  type: service
+  lifecycle: production
+  owner: group:backend-team
+  system: identity-management
+  
+  providesApis:
+    - users-v1-api
+    - users-v2-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: engineering
+  description: The team responsible for developing APIs and core services
+spec:
+  type: team
+  profile:
+    displayName: Engineering Team
+    email: engineering-team@acme.com
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: backend-team
+  description: The team responsible for developing APIs and core services
+spec:
+  type: team
+  profile:
+    displayName: Backend Developers
+    email: backend-team@acme.com
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: mronconi
+spec:
+  profile:
+    displayName: Marco Ronconi
+    email: mronconi@redhat.com
+  memberOf: [group:backend-team]
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: identity-management
+  title: Identity Management
+  description: Central identity and user profile management system
+spec:
+  owner: backend-team

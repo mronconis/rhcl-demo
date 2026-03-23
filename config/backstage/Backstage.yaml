@@ -1,0 +1,141 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: rhdh
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: rhdh-operator
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhdh
+  namespace: rhdh-operator
+spec:
+  channel: fast
+  installPlanApproval: Automatic
+  name: rhdh
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: rhdh-operator.v1.9.2
+---
+apiVersion: rhdh.redhat.com/v1alpha5
+kind: Backstage
+metadata:
+  name: developer-hub
+  namespace: rhdh
+spec:
+  application:
+    appConfig:
+      mountPath: /opt/app-root/src
+      configMaps:
+        - name: custom-rhdh-app-config
+    dynamicPluginsConfigMapName: custom-rhdh-dynamic-plugins
+    extraFiles:
+      mountPath: /opt/app-root/src
+    extraEnvs:
+      envs:
+        - name: NODE_TLS_REJECT_UNAUTHORIZED
+          value: "0"
+      secrets:
+        - name: rhdh-keycloak-secrets
+    route:
+      enabled: true
+  database:
+    enableLocalDb: true
+  monitoring:
+    enabled: false
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: custom-rhdh-app-config
+  namespace: rhdh
+data:
+  app-config.yaml: |-
+    app:
+      title: Developer Portal
+      baseUrl: https://backstage-developer-hub-rhdh.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com
+
+    organization:
+      name: "ACME"
+
+    backend:
+      trustProxy: true
+      baseUrl: https://backstage-developer-hub-rhdh.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com
+      cors:
+        origin: https://backstage-developer-hub-rhdh.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com
+        methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+        credentials: true
+      auth:
+        keys:
+          - secret: "${BACKEND_SECRET}"
+      trustedOrigins:
+        - https://backstage-developer-hub-rhdh.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com
+
+      session:
+        secret: "${SESSION_SECRET}"
+
+    auth:
+      session:
+        secret: ${SESSION_SECRET}
+        cookie:
+          sameSite: none
+          secure: true
+      environment: development
+      providers:
+        oidc:
+          development:
+            metadataUrl: 'https://keycloak-rhbk.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com/realms/rhdh/.well-known/openid-configuration'
+            clientId: ${AUTH_KEYCLOAK_CLIENT_ID}
+            clientSecret: ${AUTH_KEYCLOAK_CLIENT_SECRET}
+            callbackUrl: 'https://backstage-developer-hub-rhdh.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com/api/auth/oidc/handler/frame?env=development'
+            usePkce: false
+            flow: redirect
+            prompt: auto
+
+    signInPage: oidc
+     
+    catalog:
+      rules:
+        - allow: [Component, System, API, Resource, Location, User, Group]
+
+      providers:
+        keycloakOrg:
+          default:
+            baseUrl: https://keycloak-rhbk.apps.rosa.rosa-g5d45.fvz9.p3.openshiftapps.com
+            clientId: "${SYNC_KEYCLOAK_CLIENT_ID}"
+            clientSecret: "${SYNC_KEYCLOAK_CLIENT_SECRET}"
+            realm: rhdh
+            loginRealm: rhdh
+
+    techdocs:
+      builder: 'local'
+      generator:
+        runIn: 'local'
+      publisher:
+        type: 'local'
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: custom-rhdh-dynamic-plugins
+  namespace: rhdh
+data:
+  dynamic-plugins.yaml: |-
+    includes:
+      - dynamic-plugins.default.yaml
+    plugins:
+      - package: './dynamic-plugins/dist/backstage-community-plugin-catalog-backend-module-keycloak-dynamic'
+        disabled: false
+      - package: ./dynamic-plugins/dist/backstage-plugin-techdocs-module-addons-contrib
+        disabled: false
+        pluginConfig:
+          dynamicPlugins:
+            frontend:
+              backstage.plugin-techdocs-module-addons-contrib:
+                techdocsAddons:
+                  - importName: ReportIssue
+

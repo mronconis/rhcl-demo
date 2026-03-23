@@ -1,0 +1,47 @@
+apiVersion: kuadrant.io/v1
+kind: RateLimitPolicy
+metadata:
+  name: users-v1-rate-limit
+  namespace: service-mesh-demo
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: users-route-v1
+  limits:
+    "global-limits-by-ip":
+      rates:
+      - limit: 3
+        window: 1m
+      counters:
+      - expression: "auth.identity.source_ip"
+---
+apiVersion: kuadrant.io/v1
+kind: RateLimitPolicy
+metadata:
+  name: users-v2-rate-limit
+  namespace: service-mesh-demo
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: users-route-v2
+  limits:
+    "alice-limits-by-user":
+      rates:
+      - limit: 5
+        window: 1m
+      counters:
+      - expression: auth.identity.userid
+      when:
+      - predicate: "auth.identity.userid == 'alice'"
+    "bob-limits-by-user":
+      rates:
+      - limit: 10
+        window: 1m
+      counters:
+      - expression: auth.identity.userid
+      when:
+      - predicate: "auth.identity.userid == 'bob'"
+
+          
