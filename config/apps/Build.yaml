@@ -12,6 +12,12 @@ metadata:
   name: users
   namespace: service-mesh-demo
 ---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: user-profiles
+  namespace: service-mesh-demo
+---
 kind: BuildConfig
 apiVersion: build.openshift.io/v1
 metadata:
@@ -65,3 +71,30 @@ spec:
     git:
       uri: 'https://github.com/mronconis/rhcl-demo.git'
     contextDir: apps/users-v2
+---
+kind: BuildConfig
+apiVersion: build.openshift.io/v1
+metadata:
+  name: user-profiles-v1
+  labels:
+    app.kubernetes.io/part-of: user-profiles
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'user-profiles:1.0.0'
+  resources:
+    limits:
+      memory: 1Gi
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: ImageStreamTag
+        name: 'openjdk-25:1.24-2.1773186581'
+        namespace: openshift
+  source:
+    type: Git
+    git:
+      uri: 'https://github.com/mronconis/rhcl-demo.git'
+    contextDir: apps/user-profiles-v1

@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-profiles-v1
+  namespace: service-mesh-demo
+  labels:
+    app: user-profiles
+spec:
+  ports:
+  - port: 8080
+    name: http
+  selector:
+    app: user-profiles
+    version: "1.0.0"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-profiles-v1
+  namespace: service-mesh-demo
+  labels:
+    app: user-profiles
+    version: "1.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-profiles
+      version: "1.0.0"
+  template:
+    metadata:
+      labels:
+        app: user-profiles
+        version: "1.0.0"
+    spec:
+      serviceAccountName: service-mesh-demo-users
+      containers:
+      - name: user-profiles-v1
+        image: image-registry.openshift-image-registry.svc:5000/service-mesh-demo/user-profiles:1.0.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: user-profiles-route-v1
+  namespace: service-mesh-demo
+spec:
+  parentRefs:
+  - name: users-gateway
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /v1/user/profile
+    backendRefs:
+    - name: user-profiles-v1
+      port: 8080
