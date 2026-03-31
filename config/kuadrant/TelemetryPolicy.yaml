@@ -1,0 +1,16 @@
+apiVersion: extensions.kuadrant.io/v1alpha1
+kind: TelemetryPolicy
+metadata:
+  name: user-profile-telemetry
+  namespace: service-mesh-demo
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: users-gateway
+  metrics:
+    default:
+      labels:
+        user: auth.identity.sub
+        role: auth.metadata.external-user-profile.role
+        department: auth.metadata.external-user-profile.department

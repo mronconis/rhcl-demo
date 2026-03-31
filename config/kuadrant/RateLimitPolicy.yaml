@@ -27,21 +27,9 @@ spec:
     kind: HTTPRoute
     name: users-route-v2
   limits:
-    "alice-limits-by-user":
+    "global-limits-by-user_id":
       rates:
       - limit: 5
         window: 1m
       counters:
-      - expression: auth.identity.userid
-      when:
-      - predicate: "auth.identity.userid == 'alice'"
-    "bob-limits-by-user":
-      rates:
-      - limit: 10
-        window: 1m
-      counters:
-      - expression: auth.identity.userid
-      when:
-      - predicate: "auth.identity.userid == 'bob'"
-
-          
+      - expression: "metadata.filter_metadata.envoy.filters.http.ext_authz.user_id"

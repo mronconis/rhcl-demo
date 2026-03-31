@@ -1,0 +1,17 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: mesh-default
+  namespace: service-mesh-demo
+spec:
+  tracing:
+    - providers:
+        - name: otel
+      randomSamplingPercentage: 100.0
+      customTags:
+        user_id:
+          header:
+            name: x-user-id
+        req_id:
+          header:
+            name: x-request-id

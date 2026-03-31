@@ -37,40 +37,43 @@ spec:
     kind: HTTPRoute
     name: users-route-v2
   defaults:
-   when:
-     - predicate: "request.path != '/q/health'"
-   rules:
-    authentication:
-      "api-key-users":
-        apiKey:
-          selector:
-            matchLabels:
-              app: users
-        credentials:
-          authorizationHeader:
-            prefix: APIKEY
+    when:
+      - predicate: "request.path != '/q/health'"
 
-    metadata:
-      "external-user-profile":
-        http:
-          url: "http://user-profiles-v1.service-mesh-demo.svc.cluster.local:8080/v1/user/profile"
-          method: GET
-          contentType: application/json
+    rules:
+      authentication:
+        "quarkus-custom-auth":
+          oauth2Introspection:
+            endpoint: "http://user-profiles-v1.service-mesh-demo.svc.cluster.local:8080/v1/token/introspect"
+            credentialsRef:
+                name: quarkus-introspection-secret
+
+      metadata:
+        "external-user-profile":
+          http:
+            url: "http://user-profiles-v1.service-mesh-demo.svc.cluster.local:8080/v1/user/profile"
+            method: GET
+            contentType: application/json
+            headers:
+              "x-user-id":
+                expression: auth.identity.sub
+
+      response:
+        success:
+          filters:
+            "user_id":
+              plain:
+                expression: auth.identity.sub
+
           headers:
             "x-user-id":
-              expression: auth.identity.metadata.annotations["secret.kuadrant.io/user-id"]
-
-    response:
-      success:
-        headers:
-          "x-user-id":
-            plain:
-              expression: auth.identity.metadata.annotations["secret.kuadrant.io/user-id"]
-          "x-user-role":
-            plain:
-              selector: auth.metadata.external-user-profile.role
-          "x-user-department":
-            plain:
-              selector: auth.metadata.external-user-profile.department
+              plain:
+                expression: auth.identity.sub
+            "x-user-role":
+              plain:
+                selector: auth.metadata.external-user-profile.role
+            "x-user-department":
+              plain:
+                selector: auth.metadata.external-user-profile.department
 
   

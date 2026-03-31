@@ -61,6 +61,16 @@ spec:
   memberOf: [group:backend-team]
 ---
 apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: marco
+spec:
+  profile:
+    displayName: Marco Ronconi
+    email: marco.ronconi@gmail.com
+  memberOf: [group:backend-team]
+---
+apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
   name: identity-management

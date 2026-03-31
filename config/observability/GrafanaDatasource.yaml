@@ -1,0 +1,47 @@
+
+
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: tempo-datasource
+  namespace: monitoring
+spec:
+  allowCrossNamespaceImport: false
+  datasource:
+    access: proxy
+    editable: true
+    isDefault: false
+    jsonData:
+      httpHeaderName1: X-Scope-OrgID
+      timeInterval: 5s
+      tlsAuth: true
+      tlsAuthWithCACert: false
+      tlsSkipVerify: true
+    name: tempo
+    secureJsonData:
+      httpHeaderValue1: '${default}'
+      tlsClientCert: '${tls.crt}'
+      tlsClientKey: '${tls.key}'
+    type: tempo
+    url: 'https://tempo-tempo-stack-instance-query-frontend.openshift-tempo-operator.svc.cluster.local:3200'
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  resyncPeriod: 10m0s
+  valuesFrom:
+    - targetPath: secureJsonData.tlsClientCert
+      valueFrom:
+        secretKeyRef:
+          key: tls.crt
+          name: tempo-auth
+    - targetPath: secureJsonData.tlsClientKey
+      valueFrom:
+        secretKeyRef:
+          key: tls.key
+          name: tempo-auth
+    - targetPath: secureJsonData.httpHeaderValue1
+      valueFrom:
+        secretKeyRef:
+          key: default
+          name: tempo-auth
+

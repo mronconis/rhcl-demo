@@ -1,0 +1,108 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: opentelemetry-product
+  namespace: openshift-opentelemetry-operator
+spec:
+  channel: stable
+  installPlanApproval: Automatic
+  name: opentelemetry-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: opentelemetry-operator.v0.144.0-1
+---
+apiVersion: opentelemetry.io/v1beta1
+kind: OpenTelemetryCollector
+metadata:
+  name: otel
+  namespace: openshift-opentelemetry-operator
+spec:
+  networkPolicy:
+    enabled: false
+  observability:
+    metrics: {}
+  deploymentUpdateStrategy: {}
+  config:
+    extensions:
+      bearertokenauth:
+        filename: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    exporters:
+      otlp:
+        endpoint: "tempo-tempo-stack-instance-gateway.openshift-tempo-operator.svc.cluster.local:8090"
+        tls:
+          insecure: true
+          ca_file: "/var/run/secrets/kubernetes.io/serviceaccount/service-ca.crt"
+        auth:
+          authenticator: bearertokenauth
+        headers:
+          X-Scope-OrgID: "default"
+    processors:
+      batch:
+        send_batch_size: 1000
+        timeout: 10s
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: '0.0.0.0:4317'
+          http:
+            endpoint: '0.0.0.0:4318'
+    service:
+      extensions: [bearertokenauth]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlp]
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+  mode: deployment
+  resources: {}
+  podDnsConfig: {}
+  managementState: managed
+  upgradeStrategy: automatic
+  ingress:
+    route: {}
+  daemonSetUpdateStrategy: {}
+  targetAllocator:
+    allocationStrategy: consistent-hashing
+    collectorNotReadyGracePeriod: 30s
+    collectorTargetReloadInterval: 30s
+    filterStrategy: relabel-config
+    observability:
+      metrics: {}
+    prometheusCR:
+      scrapeInterval: 30s
+    resources: {}
+  replicas: 1
+  ipFamilyPolicy: SingleStack
+  configVersions: 3
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-tempo-write-role
+rules:
+  - apiGroups: ["tempo.grafana.com"]
+    resources: ["default"]
+    resourceNames: ["traces"]
+    verbs: ["create"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: otel-collector-tempo-write-binding
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector
+    namespace: openshift-opentelemetry-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-collector-tempo-write-role

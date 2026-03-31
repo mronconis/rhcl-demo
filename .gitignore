@@ -45,4 +45,6 @@ nb-configuration.xml
 .certs/
 
 # Contains secrets
-config/backstage/Secret.yaml
+**/Secret.yaml
+
+USECASE.md

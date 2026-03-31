@@ -19,5 +19,16 @@ kind: Kuadrant
 metadata:
   name: kuadrant
   namespace: service-mesh-demo
-spec: {}
-
+spec:
+  components:
+    developerPortal:
+      enabled: true
+  observability:
+    enable: true
+    dataPlane:
+      defaultLevels:
+        - debug: "true"
+      httpHeaderIdentifier: x-request-id
+    tracing:
+      defaultEndpoint: rpc://otel-collector.openshift-opentelemetry-operator.svc.cluster.local:4317
+      insecure: true

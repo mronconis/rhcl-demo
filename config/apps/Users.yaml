@@ -97,6 +97,9 @@ kind: HTTPRoute
 metadata:
   name: users-route-v1
   namespace: service-mesh-demo
+  labels:
+    deployment: users-v1
+    service: users-v1
 spec:
   parentRefs:
   - name: users-gateway
@@ -114,6 +117,9 @@ kind: HTTPRoute
 metadata:
   name: users-route-v2
   namespace: service-mesh-demo
+  labels:
+    deployment: users-v2
+    service: users-v2
 spec:
   parentRefs:
   - name: users-gateway

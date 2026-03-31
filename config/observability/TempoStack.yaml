@@ -1,0 +1,88 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: tempo-product
+  namespace: openshift-tempo-operator
+spec:
+  channel: stable
+  config:
+    env:
+    - name: ROLEARN
+      value: arn:aws:s3:::demo-rhcl-tempo-traces
+  installPlanApproval: Automatic
+  name: tempo-product
+  source: redhat-operators
+  sourceNamespace: openshift-marketplace
+  startingCSV: tempo-operator.v0.20.0-2
+---
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoStack
+metadata:
+  name: tempo-stack-instance
+  namespace: openshift-tempo-operator
+  labels:
+    tempo.grafana.com/distribution: openshift
+spec:
+  tenants:
+    mode: openshift
+    authentication:
+      - tenantName: default
+        tenantId: "12345678-1234-1234-1234-123456789012"
+  networkPolicy:
+    enabled: false
+  observability:
+    metrics:
+      createServiceMonitors: true
+    grafana:
+      instanceSelector: {}
+    tracing:
+      jaeger_agent_endpoint: 'localhost:6831'
+  timeout: 30s
+  resources:
+    total:
+      limits:
+        cpu: '2'
+        memory: 2Gi
+  search:
+    defaultResultLimit: 20
+    maxDuration: 0s
+  managementState: Managed
+  limits:
+    global:
+      ingestion: {}
+      query:
+        maxSearchDuration: 0s
+  serviceAccount: tempo-tempo-stack-instance
+  images: {}
+  template:
+    gateway:
+      enabled: true
+      rbac:
+        enabled: true
+  replicationFactor: 1
+  storage:
+    secret:
+      name: tempostack-s3-secret
+      type: s3
+    tls:
+      enabled: false
+  storageSize: 1Gi
+  hashRing:
+    memberlist: {}
+  retention:
+    global:
+      traces: 48h0m0s
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: view
+  namespace: openshift-tempo-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: openshift-tempo-operator

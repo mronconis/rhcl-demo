@@ -1,8 +1,6 @@
 # Red Hat Connectivity Link Demo
 
-**Red Hat Connectivity Link** (which is based on the open-source Kuadrant project) leverages the Kubernetes Gateway API standards to enforce its connectivity policies, such as DNS management, TLS security, authentication, and rate limiting. 
-
-:warning: For these policies to be applied, you need a Gateway Provider that is compatible with the Gateway API.
+**Red Hat Connectivity Link** (which is based on the open-source Kuadrant project) leverages the Kubernetes Gateway API standards to enforce its connectivity policies, such as DNS management, TLS security, authentication, rate limiting and so on.
 
 ## Policy Topology
 The following topology will be implemented in the demo described in this repository.
@@ -180,6 +178,57 @@ oc apply -f config/backstage/Backstage.yaml
 Create and apply secret with keycloak client credentials:
 ```bash
 oc apply -f config/backstage/Secret.yaml 
+```
+
+## Setup Observability
+
+### Logging
+TBD.
+
+### Metrics
+
+Enable user workload monitoring:
+```bash
+oc apply -f config/kuadrant/observability/ConfigMap.yaml 
+```
+
+Apply procedure described [here](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.3/html-single/observability/index#configure-obs-monitoring_rhcl-observability) to setup Grafana, PodMonitor and ServiceMonitor.
+
+### Traces
+
+Create and apply secret with s3 credential for Tempo storage and Tempo query-frontend mTLS certs for Grafana DS:
+```bash
+oc apply -f config/observability/Secret.yaml 
+```
+
+Setup Tempo Stack:
+```bash
+oc apply -f config/observability/TempoStack.yaml 
+```
+
+Setup OpenTelemetry:
+```bash
+oc apply -f config/observability/OpenTelemetryCollector.yaml 
+```
+
+Configure tracing for Istio Envoy proxy:
+```bash
+oc apply -f config/istio/Telemetry.yaml 
+```
+
+Configure secret for Grafana Tempo DS:
+```bash
+oc get secret -n openshift-tempo-operator tempo-tempo-stack-instance-gateway-mtls -o jsonpath='{.data.tls\.crt}' | base64 -d > tls.crt
+oc get secret -n openshift-tempo-operator tempo-tempo-stack-instance-gateway-mtls -o jsonpath='{.data.tls\.key}' | base64 -d > tls.key
+
+oc get tempostack/tempo-stack-instance -n openshift-tempo-operator -o jsonpath='{.spec.tenants.authentication}'
+
+oc create secret generic tempo-auth -n monitoring --from-file=tls.crt=tls.crt --from-file=tls.key=tls.key --from-literal=default="12345678-1234-1234-1234-123456789012"
+```
+
+Configure DS for Tempo on Grafana: 
+```bash
+oc apply -f config/observability/GrafanaDatasource.yaml 
 ```
 
 ## Documentations
